@@ -1,22 +1,26 @@
-# Use official Python 3.10.11 image
-FROM python:3.10.11-slim
+# Use a Python base image
+FROM python:3.11-slim
 
-# Set work directory
-WORKDIR /app
+# Set environment variables to prevent Python from writing .pyc files and
+# buffering stdout/stderr
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
 
-# Install system dependencies (if needed, can be removed if not using any OS deps)
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
+# Set the working directory in the container
+WORKDIR /usr/src/app
 
-# Copy requirements (if you use one)
+# Copy the requirements file and install dependencies
+# We use a two-step copy to leverage Docker caching
 COPY requirements.txt .
-
-# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy your code
+# Copy the rest of the application code
 COPY . .
 
-# Run the Extractor module
-CMD ["sh", "-c", "python -m Extractor"]
+# Expose the port used by your Flask app (8080 as seen in your logs)
+EXPOSE 8080
+
+# Command to run the application. We use run.py as the entrypoint.
+# Railway automatically maps the external port to the $PORT variable.
+# We will update run.py to respect this.
+CMD ["python", "run.py"]
